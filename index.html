@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Countdown Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      * {
+        font-family: 'Barlow', sans-serif;
+        font-size: 21.3333px;
+        line-height: 24.5333px;
+        text-align: center;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      #countdown {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 20px;
+      }
+
+      .is-hidden {
+        display: none !important;
+      }
+
+      #countdown--clock {
+        display: flex;
+        justify-content: center;
+      }
+
+      #countdown--clock > div {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="countdown" class="is-hidden">
+      <h1 id="countdown--header"></h1>
+      <div id="countdown--clock">
+        <div>
+          <span id="countdown--days" class="countdown--number"></span><br />
+          days
+        </div>
+        <div>
+          <span id="countdown--hours" class="countdown--number"></span><br />
+          hours
+        </div>
+        <div>
+          <span id="countdown--minutes" class="countdown--number"></span><br />
+          minutes
+        </div>
+        <div>
+          <span id="countdown--seconds" class="countdown--number"></span><br />
+          seconds
+        </div>
+      </div>
+      <p id="countdown--footer"></p>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.26.1/dist/axios.min.js" integrity="sha256-iSkNRnKsHORmMCNgQIxzyW0QzHrWeko/lyVjyI78G2c=" crossorigin="anonymous"></script>
+    <script>
+      (() => {
+        let endMillis = 0;
+        let endMessage = "";
+
+        let tickTimeout;
+
+        const tick = () => {
+
+          let remainingMillis = endMillis - Date.now();
+
+          if (remainingMillis <= 0) {
+            window.clearTimeout(tickTimeout);
+            document.getElementById("countdown").textContent = endMessage;
+            return;
+          }
+
+          let days = Math.floor(remainingMillis / (86400 * 1000));
+          remainingMillis -= days * (86400 * 1000);
+
+          if (days > 0) {
+            document.getElementById("countdown--days").textContent = days;
+          } else {
+            document.getElementById("countdown--days").closest("div").classList.add("is-hidden");
+          }
+
+          let hours = Math.floor(remainingMillis / (3600 * 1000));
+          remainingMillis -= hours * (3600 * 1000);
+
+          if (days > 0 || hours > 0) {
+            document.getElementById("countdown--hours").textContent = hours;
+          } else {
+            document.getElementById("countdown--hours").closest("div").classList.add("is-hidden");
+          }
+
+          let minutes = Math.floor(remainingMillis / (60 * 1000));
+          remainingMillis -= minutes * (60 * 1000);
+
+          if (days > 0 || hours > 0 || minutes > 0) {
+            document.getElementById("countdown--minutes").textContent = minutes;
+          } else {
+            document.getElementById("countdown--minutes").closest("div").classList.add("is-hidden");
+          }
+
+          let seconds = Math.floor(remainingMillis / 1000);
+
+          document.getElementById("countdown--seconds").textContent = seconds;
+        };
+
+        const configName = new URLSearchParams(window.location.search).get("config");
+
+        if (configName) {
+          axios.get("config/" + configName + ".json")
+            .then((response) => {
+              return response.data;
+            })
+            .then((countdownConfig) => {
+
+              endMillis = countdownConfig.endMillis;
+              endMessage = countdownConfig.endMessage;
+
+              document.getElementById("countdown--header").textContent = countdownConfig.header;
+              document.getElementById("countdown--footer").textContent = countdownConfig.footer;
+
+              tickTimeout = window.setInterval(tick, 1000);
+              tick();
+
+              document.getElementById("countdown").classList.remove("is-hidden");
+            })
+            .catch(() => {
+              window.alert("Error loading countdown config: " + configName);
+            });
+        }
+      })();
+    </script>
+  </body>
+</html>
